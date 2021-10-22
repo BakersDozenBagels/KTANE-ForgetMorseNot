@@ -191,7 +191,7 @@ public class ForgetMorseNotScript : ModuleScript
             List<int> nonNullStages = Enumerable.Range(0, _rememberedStages.Count).Where(i => _rememberedStages[i] != null).ToList();
             if(nonNullStages.Count == 0)
             {
-                transmission = "..---.. ..--..";
+                transmission = "..--.. ..--..";
                 _expectedSubmission = ".";
                 _numberInput = 999;
                 Log("Transmission received: \"{0}\".", transmission);
@@ -233,6 +233,8 @@ public class ForgetMorseNotScript : ModuleScript
                     Log("Expected input: \"{0}\"", _expectedSubmission);
             }
             transmission = _transmissions[_currentStage];
+            if(transmission == null)
+                transmission = string.Empty;
         }
 
         foreach(char c in transmission)
