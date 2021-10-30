@@ -5,8 +5,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
 using UnityEngine;
+using Random = UnityEngine.Random;
 
-public class ForgetMorseNotScript : ModuleScript
+public class ForgetMorseNotScript : MonoBehaviour
 {
     [SerializeField]
     private Renderer _screen;
@@ -20,19 +21,22 @@ public class ForgetMorseNotScript : ModuleScript
     private KMBombInfo _info;
     [SerializeField]
     private TextMesh _text;
+    [SerializeField]
+    private KMBombModule _module;
 
     private string[] _ignored;
     private static readonly string[] PROSIGNS = new string[] { ".-. .--. -", "--.- - --.-", "--.- - ..." };
-    private int _currentStage, _submissionStage, _currentlyAskedStage, _numberInput;
-    private float _lastHeld, _lastReleased = -1f, _playSpeed = 9f, _lastStrike;
+    private int _currentStage, _submissionStage, _currentlyAskedStage, _numberInput, _id = ++_idc, _nonIgnoredSolves;
+    private float _lastHeld, _lastReleased = -1f, _playSpeed = 9f, _lastStrike, _checkForSolves;
     private string _currentSubmission = string.Empty, _expectedSubmission = string.Empty;
-    private bool _solveOnPress, _autoSolving;
+    private bool _solveOnPress, _autoSolving, _isSolved;
     private List<string> _transmissions = new List<string>(), _rememberedStages = new List<string>();
     private KMAudio.KMAudioRef _audioRef;
+    private static int _idc;
 
     private void Start()
     {
-        _ignored = _boss.GetIgnoredModules(Module.Solvable, new string[] {
+        _ignored = _boss.GetIgnoredModules(_module, new string[] {
             "Forget Morse Not"
         });
 #if UNITY_EDITOR
@@ -44,7 +48,7 @@ public class ForgetMorseNotScript : ModuleScript
         {
             _solveOnPress = true;
         }
-        Get<KMSelectable>().Children[0].Assign(onInteract: Press, onInteractEnded: Release);
+        GetComponent<KMSelectable>().Children[0].Assign(onInteract: Press, onInteractEnded: Release);
         _transmissions.Add(null);
         _rememberedStages.Add(null);
     }
@@ -52,7 +56,7 @@ public class ForgetMorseNotScript : ModuleScript
     private void Press()
     {
         On();
-        if(IsSolved)
+        if(_isSolved)
             return;
         if(_solveOnPress)
         {
@@ -72,7 +76,7 @@ public class ForgetMorseNotScript : ModuleScript
     private void Release()
     {
         Off();
-        if(_solveOnPress || IsSolved || Time.time - _lastStrike < 3f)
+        if(_solveOnPress || _isSolved || Time.time - _lastStrike < 3f)
             return;
         if(Time.time - _lastHeld < 0.5f)
             _currentSubmission += ".";
@@ -93,6 +97,18 @@ public class ForgetMorseNotScript : ModuleScript
         {
             Submit();
             _lastReleased = -1f;
+        }
+        if(_checkForSolves < 1f)
+            _checkForSolves += Time.deltaTime;
+        else
+        {
+            _checkForSolves = 0f;
+            int _solves = _info.GetSolvedModuleNames().Where(n => !_ignored.Contains(n)).Count();
+            while(_solves < _nonIgnoredSolves)
+            {
+                OnModuleSolved();
+                _nonIgnoredSolves++;
+            }
         }
     }
 
@@ -172,14 +188,11 @@ public class ForgetMorseNotScript : ModuleScript
         }
     }
 
-    public override void OnModuleSolved(ModuleContainer module)
+    private void OnModuleSolved()
     {
-        if(!_ignored.Contains(module.Name) && module.Name != "Forget Morse Not" && _currentStage < _submissionStage)
-        {
-            _currentStage++;
-            _text.text = _currentStage.ToString();
-            StartCoroutine(ShowStage());
-        }
+        _currentStage++;
+        _text.text = _currentStage.ToString();
+        StartCoroutine(ShowStage());
     }
 
     private IEnumerator ShowStage(bool isRepeat = false)
@@ -355,16 +368,33 @@ public class ForgetMorseNotScript : ModuleScript
         }).Join(" ");
     }
 
+    private void Solve(string message)
+    {
+        Log(message);
+        _module.HandlePass();
+    }
+
+    private void Strike(string message)
+    {
+        Log(message);
+        _module.HandleStrike();
+    }
+
+    private void Log(string message, object arg = null)
+    {
+        Debug.LogFormat("[Forget Morse Not #{0}] " + message, _id, arg);
+    }
+
 #pragma warning disable 414
-    private const string TwitchHelpMessage = @"!{0} play to press the big button, !{0} type 69420 to type in 69420 at the end";
+    private const string TwitchHelpMessage = "\"!{0} - -..-\" to transmit those characters.";
 #pragma warning restore 414
 
     IEnumerator ProcessTwitchCommand(string command)
     {
-        if(Regex.IsMatch(command, @"^(-|.|\s+)+$", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant))
+        if(Regex.IsMatch(command, @"^(?:press|transmit|tx|push|send|submit)?\s*(-|.|\s+)+$", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant))
         {
             yield return null;
-            KMSelectable button = Get<KMSelectable>().Children[0];
+            KMSelectable button = GetComponent<KMSelectable>().Children[0];
             foreach(char c in command.Trim())
             {
                 if(c == '-')
@@ -392,7 +422,7 @@ public class ForgetMorseNotScript : ModuleScript
     {
         _autoSolving = true;
         _playSpeed = 30f;
-        while(!IsSolved)
+        while(!_isSolved)
         {
             while(_expectedSubmission == "")
             {
