@@ -533,7 +533,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c79e4ebf093e947438dda92d20d3d523, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _editorRuleSeed: 1
   _screen: {fileID: 23666437573713016}
   _offMat: {fileID: 2100000, guid: 798b3dd75ce406848a2eedac0fb34513, type: 2}
   _onMat: {fileID: 2100000, guid: 45396a0ca91975f4dbb768791cde56e5, type: 2}
@@ -541,6 +540,7 @@ MonoBehaviour:
   _audio: {fileID: 114034845777817220}
   _info: {fileID: 114999113536949184}
   _text: {fileID: 102344852737886854}
+  _module: {fileID: 114359759494574300}
 --- !u!114 &114895124795773920
 MonoBehaviour:
   m_ObjectHideFlags: 1
