@@ -98,13 +98,14 @@ public class ForgetMorseNotScript : MonoBehaviour
             Submit();
             _lastReleased = -1f;
         }
+
         if(_checkForSolves < 1f)
             _checkForSolves += Time.deltaTime;
         else
         {
             _checkForSolves = 0f;
             int _solves = _info.GetSolvedModuleNames().Where(n => !_ignored.Contains(n)).Count();
-            while(_solves < _nonIgnoredSolves)
+            while(_solves > _nonIgnoredSolves)
             {
                 OnModuleSolved();
                 _nonIgnoredSolves++;
@@ -382,7 +383,7 @@ public class ForgetMorseNotScript : MonoBehaviour
 
     private void Log(string message, object arg = null)
     {
-        Debug.LogFormat("[Forget Morse Not #{0}] " + message, _id, arg);
+        Debug.LogFormat("[Forget Morse Not " + _id + "] " + message, arg);
     }
 
 #pragma warning disable 414
