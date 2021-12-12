@@ -40,7 +40,7 @@ public class ForgetMorseNotScript : MonoBehaviour
             "Forget Morse Not"
         });
 #if UNITY_EDITOR
-        _submissionStage = 6;
+        _submissionStage = 2;
 #else
         _submissionStage = _info.GetSolvableModuleNames().Where(n => !_ignored.Contains(n) && n != "Forget Morse Not").Count();
 #endif
@@ -167,6 +167,8 @@ public class ForgetMorseNotScript : MonoBehaviour
                 {
                     Strike("You submitted \"{0}\". That isn't correct. Strike!".Form(_currentSubmission));
                     _lastStrike = Time.time;
+                    _currentSubmission = string.Empty;
+                    _expectedSubmission = string.Empty;
                 }
                 _numberInput++;
                 _currentlyAskedStage = 0;
@@ -206,8 +208,10 @@ public class ForgetMorseNotScript : MonoBehaviour
             if(nonNullStages.Count == 0)
             {
                 transmission = "..--.. ..--..";
-                _expectedSubmission = ".";
+                if(!isRepeat)
+                    _expectedSubmission = ".";
                 _numberInput = 999;
+                _currentlyAskedStage = -1;
                 Log("Transmission received: \"{0}\".", transmission);
                 Log("Expected input: \"{0}\"", _expectedSubmission);
             }
@@ -221,7 +225,7 @@ public class ForgetMorseNotScript : MonoBehaviour
                         _lastStrike = Time.time;
                     }
                     if(_currentlyAskedStage == 0)
-                        _currentlyAskedStage = nonNullStages[Random.Range(1, nonNullStages.Count)];
+                        _currentlyAskedStage = nonNullStages[Random.Range(0, nonNullStages.Count)];
                 }
                 transmission = "..--.. " + Morsify(_currentlyAskedStage);
                 _expectedSubmission = _rememberedStages[_currentlyAskedStage];
