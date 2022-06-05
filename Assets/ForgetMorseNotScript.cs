@@ -70,6 +70,8 @@ public class ForgetMorseNotScript : MonoBehaviour
     private void On()
     {
         _screen.material = _onMat;
+        if(_audioRef != null && _audioRef.StopSound != null)
+            _audioRef.StopSound();
         _audioRef = _audio.PlaySoundAtTransformWithRef("Beep", transform);
     }
 
