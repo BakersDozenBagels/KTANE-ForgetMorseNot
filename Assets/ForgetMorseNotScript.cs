@@ -29,7 +29,7 @@ public class ForgetMorseNotScript : MonoBehaviour
     private int _currentStage, _submissionStage, _currentlyAskedStage, _numberInput, _id = ++_idc, _nonIgnoredSolves;
     private float _lastHeld, _lastReleased = -1f, _playSpeed = 9f, _lastStrike, _checkForSolves;
     private string _currentSubmission = string.Empty, _expectedSubmission = string.Empty;
-    private bool _solveOnPress, _autoSolving, _isSolved;
+    private bool _solveOnPress, _autoSolving, _isSolved, _suddenChange;
     private List<string> _transmissions = new List<string>(), _rememberedStages = new List<string>();
     private KMAudio.KMAudioRef _audioRef;
     private static int _idc;
@@ -51,6 +51,9 @@ public class ForgetMorseNotScript : MonoBehaviour
         GetComponent<KMSelectable>().Children[0].Assign(onInteract: Press, onInteractEnded: Release);
         _transmissions.Add(null);
         _rememberedStages.Add(null);
+
+        _info.OnBombExploded += Off;
+        _info.OnBombSolved += Off;
     }
 
     private void Press()
@@ -120,6 +123,7 @@ public class ForgetMorseNotScript : MonoBehaviour
         if(_expectedSubmission == _currentSubmission)
         {
             Log("You submitted \"{0}\". Correct.".Form(_currentSubmission));
+            _suddenChange = true;
             _expectedSubmission = string.Empty;
             _currentSubmission = string.Empty;
             if(_currentlyAskedStage != 0)
@@ -142,6 +146,7 @@ public class ForgetMorseNotScript : MonoBehaviour
         {
             StartCoroutine(ShowStage(true));
             _currentSubmission = string.Empty;
+            _suddenChange = true;
             return;
         }
         if(PROSIGNS[1] == _currentSubmission)
@@ -150,6 +155,7 @@ public class ForgetMorseNotScript : MonoBehaviour
             _playSpeed = Mathf.Min(_playSpeed, 15f);
             _currentSubmission = string.Empty;
             _audio.PlaySoundAtTransform("Correct", transform);
+            _suddenChange = true;
             return;
         }
         if(PROSIGNS[2] == _currentSubmission)
@@ -158,6 +164,7 @@ public class ForgetMorseNotScript : MonoBehaviour
             _playSpeed = Mathf.Max(_playSpeed, 6f);
             _currentSubmission = string.Empty;
             _audio.PlaySoundAtTransform("Correct", transform);
+            _suddenChange = true;
             return;
         }
         _currentSubmission += " ";
@@ -165,6 +172,7 @@ public class ForgetMorseNotScript : MonoBehaviour
         {
             if(_currentlyAskedStage != 0)
             {
+                _suddenChange = true;
                 if(!_autoSolving)
                 {
                     Strike("You submitted \"{0}\". That isn't correct. Strike!".Form(_currentSubmission));
@@ -185,6 +193,7 @@ public class ForgetMorseNotScript : MonoBehaviour
             }
             if(!_autoSolving)
             {
+                _suddenChange = true;
                 Strike("You submitted \"{0}\". That isn't correct. Strike!".Form(_currentSubmission));
                 _lastStrike = Time.time;
             }
@@ -389,7 +398,7 @@ public class ForgetMorseNotScript : MonoBehaviour
 
     private void Log(string message, object arg = null)
     {
-        Debug.LogFormat("[Forget Morse Not " + _id + "] " + message, arg);
+        Debug.LogFormat("[Forget Morse Not #" + _id + "] " + message, arg);
     }
 
 #pragma warning disable 414
@@ -398,12 +407,19 @@ public class ForgetMorseNotScript : MonoBehaviour
 
     IEnumerator ProcessTwitchCommand(string command)
     {
-        if(Regex.IsMatch(command, @"^(?:press|transmit|tx|push|send|submit)?\s*(-|.|\s+)+$", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant))
+        Match m;
+        if((m = Regex.Match(command, @"^(?:press|transmit|tx|push|send|submit)?\s*((-|.|\s+)+)$", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant)).Success)
         {
             yield return null;
+            _suddenChange = false;
             KMSelectable button = GetComponent<KMSelectable>().Children[0];
-            foreach(char c in command.Trim())
+            foreach(char c in m.Groups[1].Value.Trim())
             {
+                if(_suddenChange)
+                {
+                    yield return "sendtochat Input was stopped due to a sudden change in the module's state.";
+                    yield break;
+                }
                 if(c == '-')
                 {
                     button.OnInteract();
