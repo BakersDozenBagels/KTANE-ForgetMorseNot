@@ -20,6 +20,6 @@ MonoBehaviour:
 
     Listen to Morse Code transmissions throughout the bomb, and react accordingly.
     At the end, submit what came before.'
-  version: 1.12
+  version: 1.13
   outputFolder: build
   previewImage: {fileID: 2800000, guid: 08dd16377660758468cde478b42a329f, type: 3}

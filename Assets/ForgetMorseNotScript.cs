@@ -331,7 +331,7 @@ public class ForgetMorseNotScript : MonoBehaviour
                     _expectedSubmission = Morsify(KMBombInfoExtensions.GetIndicators(_info).Where(s => s.Contains("R")).Count());
                     break;
                 case "-.-":
-                    _expectedSubmission = KMBombInfoExtensions.GetTwoFactorCounts(_info) > 0 ? ".-" : "-.";
+                    _expectedSubmission = (transform.root.GetComponentInChildren<KMWidget>() || _info.GetSolvableModuleNames().Contains("Widgetry")) ? ".-" : "-.";
                     break;
             }
             _rememberedStages.Add(null);
